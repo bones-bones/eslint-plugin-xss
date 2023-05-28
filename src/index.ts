@@ -2,30 +2,28 @@
  * @fileoverview Validates M-Files coding conventions
  * @author Mikko Rantanen
  */
-'use strict';
+
+import requireindex from "requireindex";
 
 // -----------------------------------------------------------------------------
 // Requirements
 // -----------------------------------------------------------------------------
 
-var requireIndex = require( 'requireindex' );
-
 // -----------------------------------------------------------------------------
 // Plugin Definition
 // -----------------------------------------------------------------------------
 
-module.exports = {
-  // import all rules in lib/rules
-    rules: requireIndex( __dirname + '/rules' ),
+// import all rules in lib/rules
 
-  // allow users to extend the recommended configurations
-    configs: {
-        recommended: {
-            plugins: [ 'xss' ],
-            rules: {
-                'xss/no-mixed-html': 'error',
-                'xss/no-location-href-assign': 'error',
-            },
-        },
+export const rules = requireindex(__dirname + "/rules");
+
+// allow users to extend the recommended configurations
+export const configs = {
+  recommended: {
+    plugins: ["xss"],
+    rules: {
+      "xss/no-mixed-html": "error",
+      "xss/no-location-href-assign": "error",
     },
+  },
 };

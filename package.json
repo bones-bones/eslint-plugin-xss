@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-xss",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Validates XSS related issues of mixing HTML and non-HTML content in variables.",
   "keywords": [
     "eslint",
@@ -9,18 +9,23 @@
   ],
   "author": "Mikko Rantanen",
   "repository": "https://github.com/Rantanen/eslint-plugin-xss",
-  "main": "lib/index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "mocha tests --recursive",
-    "lint": "eslint ./lib ./tests/"
+    "lint": "eslint ./src ./tests/"
   },
   "dependencies": {
     "requireindex": "~1.1.0"
   },
   "devDependencies": {
+    "@types/eslint": "^8.40.0",
+    "@types/node": "^20.2.5",
+    "@types/requireindex": "^1.2.0",
+    "ast-types": "^0.14.2",
     "eslint": "~2.6.0",
     "mocha": "^7.0.1",
-    "mochawesome": "^4.1.0"
+    "mochawesome": "^4.1.0",
+    "typescript": "^5.0.4"
   },
   "engines": {
     "node": ">=0.10.0"
