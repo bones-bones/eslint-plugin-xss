@@ -1,4 +1,10 @@
-import type { BaseFunction, BaseNode, BaseCallExpression } from "estree";
+import type {
+  BaseFunction,
+  BaseNode,
+  BaseCallExpression,
+  BaseExpression,
+} from "estree";
+import type { Rule } from "eslint";
 import {
   isArrayExpression,
   isArrowFunctionExpression,
@@ -89,7 +95,7 @@ export const getFullItemName = function (func: BaseNode) {
     name.push(func.name);
   }
 
-  // Reverse the stack to get it in correct order and join functio names
+  // Reverse the stack to get it in correct order and join function names
   // using '.'
   name.reverse();
 
@@ -140,7 +146,9 @@ export const getRuleNames = function (func: BaseNode) {
  *
  * @returns {Identifier} - The function identifier or null.
  */
-export const getParentFunctionIdentifier = function (node: BaseNode) {
+export const getParentFunctionIdentifier = function (
+  node: BaseExpression & Rule.NodeParentExtension
+) {
   // We'll want to get the closest function.
   var func = node;
 

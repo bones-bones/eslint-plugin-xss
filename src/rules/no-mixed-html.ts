@@ -1,4 +1,11 @@
-import type { BaseNode } from "estree";
+import type {
+  BaseNode,
+  BaseCallExpression,
+  Pattern,
+  Expression,
+  PrivateIdentifier,
+} from "estree";
+import type { Rule } from "eslint";
 /**
  * @fileoverview Checks for missing encoding when concatenating HTML strings
  * @author Mikko Rantanen
@@ -7,12 +14,19 @@ import type { BaseNode } from "estree";
 import * as re from "../re";
 import * as tree from "../tree";
 import * as Rules from "../Rules";
+import {
+  isArrayExpression,
+  isAssignmentExpression,
+  isProperty,
+  isSimpleCallExpression,
+  isVariableDeclarator,
+} from "../typeNarrowing";
 
 // -----------------------------------------------------------------------------
 // Rule Definition
 // -----------------------------------------------------------------------------
 
-module.exports = function (context) {
+module.exports = function (context: Rule.RuleContext) {
   // Default options.
   var htmlVariableRules = ["html/i"];
   var htmlFunctionRules = ["AsHtml"];
@@ -33,7 +47,7 @@ module.exports = function (context) {
   }
 
   // Turn the name rules from string/string array to regexp.
-  htmlVariableRules = htmlVariableRules.map(re.toRegexp);
+  const htmlVariableRulesRegex = htmlVariableRules.map(re.toRegexp);
   htmlFunctionRules = htmlFunctionRules.map(re.toRegexp);
 
   var allRules = new Rules({
@@ -73,9 +87,15 @@ module.exports = function (context) {
    *
    * @returns {Node[]} - Flat list of descendant nodes.
    */
-  var getDescendants = function (node: BaseNode, _children, _hasRecursed) {
+  var getDescendants = function (
+    node: BaseCallExpression,
+    _children,
+    _hasRecursed
+  ) {
     // The children array may be passed during recursion.
-    if (_children === undefined) _children = [];
+    if (_children === undefined) {
+      _children = [];
+    }
 
     // Handle the special case of .join() function.
     var passthrough = getPassthrough(node);
@@ -203,12 +223,16 @@ module.exports = function (context) {
    * @param {Node} target
    *      Target node the root is used for. Affects some XSS checks.
    */
-  var checkForXss = function (node, target) {
+  var checkForXss = function (node: BaseNode, target) {
     // Skip functions.
     // This stops the following from giving errors:
     // > htmlEncoder = function() {}
-    if (node.type === "FunctionExpression" || node.type === "ObjectExpression")
+    if (
+      node.type === "FunctionExpression" ||
+      node.type === "ObjectExpression"
+    ) {
       return;
+    }
 
     // Get the rules.
     var targetRules = allRules.get(target);
@@ -221,11 +245,7 @@ module.exports = function (context) {
       // Return if the parameter is marked as safe in the current context.
       if (targetRules.safe === true) {
         return;
-      } else if (
-        targetRules.safe &&
-        targetRules.safe.indexOf &&
-        targetRules.safe.indexOf(tree.getNodeName(childNode)) !== -1
-      ) {
+      } else if (targetRules?.safe?.includes(tree.getNodeName(childNode))) {
         return;
       }
 
@@ -261,40 +281,46 @@ module.exports = function (context) {
    *
    * @returns {bool} True, if the node uses HTML.
    */
-  var usesHtml = function (node) {
+  const usesHtml = function (
+    node: BaseNode & Rule.NodeParentExtension
+  ): boolean {
     // Check the node type.
-    if (node.type === "CallExpression") {
+    if (isSimpleCallExpression(node)) {
       // Check the valid call expression callees.
       return functionAcceptsHtml(node.callee);
-    } else if (node.type === "AssignmentExpression") {
+    } else if (isAssignmentExpression(node)) {
       // Assignment operator.
       // x = y
       // HTML-name on the left indicates html expression.
       return isHtmlVariable(node.left);
-    } else if (node.type === "VariableDeclarator") {
+    } else if (isVariableDeclarator(node)) {
       // Variable declaration.
       // var x = y
       // HTML-name as the variable name indicates html expression.
       return isHtmlVariable(node.id);
-    } else if (node.type === "Property") {
+    } else if (isProperty(node)) {
       // Property declaration.
       // x: y
       // HTML-name as the key indicates html property.
       return isHtmlVariable(node.key);
-    } else if (node.type === "ArrayExpression") {
+    } else if (isArrayExpression(node)) {
       // Array expression.
       // [ a, b, c ]
       return usesHtml(node.parent);
     } else if (node.type === "ReturnStatement") {
       // Return statement.
       let func = tree.getParentFunctionIdentifier(node);
-      if (!func) return false;
+      if (!func) {
+        return false;
+      }
 
       return isHtmlFunction(func);
     } else if (node.type === "ArrowFunctionExpression") {
       // Return statement.
       let func = tree.getParentFunctionIdentifier(node);
-      if (!func) return false;
+      if (!func) {
+        return false;
+      }
 
       return isHtmlFunction(func);
     }
@@ -370,13 +396,15 @@ module.exports = function (context) {
    *
    * @returns {bool} True, if the node matches HTML variable naming.
    */
-  var isHtmlVariable = function (node) {
+  var isHtmlVariable = function (
+    node: Pattern | Expression | PrivateIdentifier
+  ) {
     // Ensure we can get the identifier.
     node = tree.getIdentifier(node);
     if (!node) return false;
 
     // Make the check against the htmlVariableRules regexp.
-    return re.any(node.name, htmlVariableRules);
+    return re.any(node.name, htmlVariableRulesRegex);
   };
 
   /**

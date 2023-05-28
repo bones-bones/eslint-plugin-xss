@@ -3,6 +3,11 @@
  * @author Alexander Mostovenko
  */
 import type { Rule } from "eslint";
+import {
+  isBaseCallExpression,
+  isMemberExpression,
+  isPrivateIdentifier,
+} from "../typeNarrowing";
 
 // ------------------------------------------------------------------------------
 // Plugin Definition
@@ -22,35 +27,36 @@ const rule: Rule.RuleModule = {
 
     return {
       AssignmentExpression: function (node) {
-        var left = node.left;
-        var isHref = left.property && left.property.name === "href";
+        const left = node.left;
+        const isHref =
+          isMemberExpression(left) &&
+          isPrivateIdentifier(left.property) &&
+          left.property.name === "href";
         if (!isHref) {
           return;
         }
-        var isLocationObject = left.object && left.object.name === "location";
-        var isLocationProperty =
-          left.object.property && left.object.property.name === "location";
 
-        if (!(isLocationObject || isLocationProperty)) {
+        if (isMemberExpression(left)) {
+          const isLocationObject = left.object.name === "location";
+          const isLocationProperty = left.object.property.name === "location";
+          if (!(isLocationObject || isLocationProperty)) {
+            return;
+          }
+        } else {
           return;
         }
 
-        var sourceCode = context.getSourceCode();
+        const sourceCode = context.getSourceCode();
         if (
-          node.right.callee &&
+          isBaseCallExpression(node.right) &&
+          isPrivateIdentifier(node.right.callee) &&
           (node.right.callee.name === escapeFunc ||
             sourceCode.getText(node.right.callee) === escapeFunc)
         ) {
           return;
         }
         const rightSource = sourceCode.getText(node.right);
-        const errorMsg =
-          ERROR +
-          ". Please use " +
-          escapeFunc +
-          "(" +
-          rightSource +
-          ") as a wrapper for escaping";
+        const errorMsg = `${ERROR}. Please use ${escapeFunc}(${rightSource}) as a wrapper for escaping`;
 
         context.report({ node: node, message: errorMsg });
       },

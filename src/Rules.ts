@@ -1,4 +1,4 @@
-import { tree } from "./tree";
+import * as tree from "./tree";
 import type { Node, BaseNode } from "estree";
 /**
  * Rule library for different nodes.
@@ -18,7 +18,9 @@ var Rules = function (options) {
  * @returns {Object} Context rules or an empty rule object.
  */
 Rules.prototype.get = function (node: BaseNode) {
-  if (node.type === "CallExpression") return this.getFunctionRules(node);
+  if (node.type === "CallExpression") {
+    return this.getFunctionRules(node);
+  }
 
   return {};
 };
@@ -49,11 +51,11 @@ Rules.prototype._getWithCache = function (node: BaseNode, data) {
   return (data.cache[fullName] = rules || {});
 };
 
-Rules.prototype._addCategory = function (type, rules) {
+Rules.prototype._addCategory = function (type: string, rules) {
   this.data[type] = {
     cache: Object.create(null),
     rules: rules || {},
   };
 };
 
-module.exports = Rules;
+export default Rules;

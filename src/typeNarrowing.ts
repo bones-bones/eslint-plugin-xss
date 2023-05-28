@@ -11,7 +11,9 @@ import type {
   AssignmentExpression,
   ConditionalExpression,
   VariableDeclarator,
+  PrivateIdentifier,
   Property,
+  BaseCallExpression,
 } from "estree";
 
 const isOfType =
@@ -53,3 +55,12 @@ export const isArrayExpression = isOfType<ArrayExpression>("ArrayExpression");
 export const isConditionalExpression = isOfType<ConditionalExpression>(
   "ConditionalExpression"
 );
+
+export const isPrivateIdentifier =
+  isOfType<PrivateIdentifier>("PrivateIdentifier");
+
+export const isBaseCallExpression = (
+  node: BaseNode
+): node is BaseCallExpression => {
+  return Object.keys(node).includes("callee");
+};
